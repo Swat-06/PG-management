@@ -1,38 +1,22 @@
-from db import get_connection
+from db import conn, cursor
 def register_user(name, phone, email):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    
-    cur.execute("""
-        INSERT INTO user (name, phone, email, role)
-        VALUES (?, ?, ?, 'Guest')
+    cursor.execute("""
+        INSERT INTO users (name, phone, email, role)
+        VALUES (%s, %s, %s, 'Guest')
     """, (name, phone, email))
 
     conn.commit()
-    conn.close()
 
 
 def login_user(email, phone):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        SELECT role
-        FROM user
-        WHERE email = ? AND phone = ?
+    cursor.execute("""
+        SELECT user_id, name, role
+        FROM users
+        WHERE email = %s AND phone = %s
     """, (email, phone))
 
-    user = cur.fetchone()
-    conn.close()
+    return cursor.fetchone() 
 
-    return user
 def get_users():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM user")
-    rows = cur.fetchall()
-
-    conn.close()
-    return rows
+    cursor.execute("SELECT * FROM users")
+    return cursor.fetchall()
