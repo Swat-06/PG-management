@@ -1,31 +1,18 @@
-from db import get_connection
-
+from db import conn, cursor
 def add_room(room_number, room_type, rent_per_month, status, host_id):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
+    cursor.execute("""
         INSERT INTO room (room_number, room_type, rent_per_month, status, host_id)
-        VALUES (?, ?, ?, ?, ?)
+        VALUES (%s, %s, %s, %s, %s)
     """, (room_number, room_type, rent_per_month, status, host_id))
 
     conn.commit()
-    conn.close()
-    def get_available_rooms():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM room WHERE status = 'Available'")
-    rows = cur.fetchall()
-
-    conn.close()
-    return rows
+def get_available_rooms():
+    cursor.execute("""
+        SELECT room_id, room_number, room_type, rent_per_month
+        FROM room
+        WHERE status = 'Available'
+    """)
+    return cursor.fetchall()
 def get_rooms():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM room")
-    rows = cur.fetchall()
-
-    conn.close()
-    return rows
+    cursor.execute("SELECT * FROM room")
+    return cursor.fetchall()
