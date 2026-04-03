@@ -3,54 +3,57 @@ from tkinter import messagebox
 from db import conn, cursor
 
 
-# 🔹 Add Staff
-def add_staff(name, phone, role, salary):
+
+def add_staff(name, phone, role):
     try:
         cursor.execute("""
-            INSERT INTO staff (name, phone, role, salary)
-            VALUES (%s, %s, %s, %s)
-        """, (name, phone, role, salary))
+            INSERT INTO staff (name, phone, role)
+            VALUES (%s, %s, %s)
+        """, (name, phone, role))
 
         conn.commit()
+        print("Inserted into DB") 
         return True
+
     except Exception as e:
-        print(e)
+        print("Error:", e)
         return False
 
 
-# 🔹 Get Staff
+
 def get_staff():
     cursor.execute("SELECT * FROM staff")
     return cursor.fetchall()
 
 
-# 🔹 Delete Staff
+
 def delete_staff(staff_id):
     try:
-        cursor.execute("DELETE FROM staff WHERE staff_id=%s", (staff_id,))
+        cursor.execute("DELETE FROM staff_assignment WHERE staff_id = %s", (staff_id,))
+        cursor.execute("DELETE FROM staff WHERE staff_id = %s", (staff_id,))
+        
         conn.commit()
         return True
+
     except Exception as e:
-        print(e)
+        print("Delete Error:", e)
         return False
 
 
-# 🔹 Assign Staff to Room
-def assign_staff(staff_id, room_id):
+
+def assign_staff(staff_id, room_id, task_type, status):
     try:
         cursor.execute("""
-            INSERT INTO staff_assignment (staff_id, room_id)
-            VALUES (%s, %s)
-        """, (staff_id, room_id))
-
+            INSERT INTO staff_assignment 
+            (staff_id, room_id, task_type, assigned_date, task_status)
+            VALUES (%s, %s, %s, CURDATE(), %s)
+        """, (staff_id, room_id, task_type, status))
         conn.commit()
         return True
     except Exception as e:
-        print(e)
+        print("Assign Error:", e)
         return False
 
-
-# 🔹 View Assignments
 def get_assignments():
     cursor.execute("""
         SELECT s.name, s.role, r.room_number
@@ -61,7 +64,7 @@ def get_assignments():
     return cursor.fetchall()
 
 
-# 🔹 Center Window
+
 def center_window(win, width, height):
     win.update_idletasks()
     x = (win.winfo_screenwidth() // 2) - (width // 2)
@@ -69,41 +72,61 @@ def center_window(win, width, height):
     win.geometry(f"{width}x{height}+{x}+{y}")
 
 
-# 🔹 Add Staff Popup
+
 def add_staff_popup(parent):
     popup = tk.Toplevel(parent)
     popup.title("Add Staff")
     center_window(popup, 300, 300)
 
-    tk.Label(popup, text="Add Staff").pack(pady=10)
+    tk.Label(popup, text="Add Staff", font=("Arial", 12)).pack(pady=10)
 
-    e1 = tk.Entry(popup); e1.pack()
-    e2 = tk.Entry(popup); e2.pack()
-    e3 = tk.Entry(popup); e3.pack()
-    e4 = tk.Entry(popup); e4.pack()
+    tk.Label(popup, text="Name").pack()
+    e1 = tk.Entry(popup)
+    e1.pack(pady=5)
+
+    tk.Label(popup, text="Phone").pack()
+    e2 = tk.Entry(popup)
+    e2.pack(pady=5)
+
+    tk.Label(popup, text="Role").pack()
+    e3 = tk.Entry(popup)
+    e3.pack(pady=5)
 
     def submit():
-        if add_staff(e1.get(), e2.get(), e3.get(), e4.get()):
-            messagebox.showinfo("Success", "Added")
+        if add_staff(e1.get(), e2.get(), e3.get()):
+            messagebox.showinfo("Success", "Staff Added")
             popup.destroy()
+        else:
+            messagebox.showerror("Error", "Failed")
 
     tk.Button(popup, text="Add", command=submit).pack(pady=10)
 
 
-# 🔹 Assign Staff Popup
 def assign_staff_popup(parent):
     popup = tk.Toplevel(parent)
     popup.title("Assign Staff")
-    center_window(popup, 300, 250)
+    center_window(popup, 350, 300)
+
+    tk.Label(popup, text="Assign Staff", font=("Arial", 12)).pack(pady=10)
 
     tk.Label(popup, text="Staff ID").pack()
-    e1 = tk.Entry(popup); e1.pack()
+    e1 = tk.Entry(popup)
+    e1.pack(pady=5)
 
     tk.Label(popup, text="Room ID").pack()
-    e2 = tk.Entry(popup); e2.pack()
+    e2 = tk.Entry(popup)
+    e2.pack(pady=5)
+
+    tk.Label(popup, text="Task Type").pack()
+    e3 = tk.Entry(popup)
+    e3.pack()
+
+    tk.Label(popup, text="Status").pack()
+    e4 = tk.Entry(popup)
+    e4.pack()
 
     def assign():
-        if assign_staff(e1.get(), e2.get()):
+        if assign_staff(e1.get(), e2.get(),e3.get(), e4.get()):
             messagebox.showinfo("Success", "Assigned")
             popup.destroy()
         else:
@@ -112,54 +135,133 @@ def assign_staff_popup(parent):
     tk.Button(popup, text="Assign", command=assign).pack(pady=10)
 
 
-# 🔹 View Assignments Popup
-def view_assignments_popup(parent):
-    popup = tk.Toplevel(parent)
-    popup.title("Assignments")
-    center_window(popup, 350, 300)
-
-    rows = get_assignments()
-
-    for r in rows:
-        tk.Label(popup, text=str(r)).pack()
-
-
-# 🔹 View Staff Popup
 def view_staff_popup(parent):
-    popup = tk.Toplevel(parent)
-    popup.title("Staff List")
-    center_window(popup, 300, 300)
+    win = tk.Toplevel(parent)
+    win.title("Staff")
+    center_window(win, 700, 450)
 
-    rows = get_staff()
-    for r in rows:
-        tk.Label(popup, text=str(r)).pack()
+    tk.Label(win, text="Staff",
+             font=("Arial", 16, "bold")).pack(pady=10)
 
+    container = tk.Frame(win)
+    container.pack(fill="both", expand=True, padx=20, pady=10)
 
-# 🔹 Delete Staff Popup
-def delete_staff_popup(parent):
-    popup = tk.Toplevel(parent)
-    popup.title("Delete Staff")
-    center_window(popup, 300, 200)
+    staff = get_staff()
 
-    tk.Label(popup, text="Enter Staff ID").pack()
-    e = tk.Entry(popup); e.pack()
+    if not staff:
+        tk.Label(container, text="No staff found").pack()
+    else:
+        table = tk.Frame(container)
+        table.pack(fill="x")
 
-    def delete():
-        if delete_staff(e.get()):
-            messagebox.showinfo("Deleted", "Success")
+        headers = ["ID", "Name", "Phone", "Role", "Action"]
+        for col, h in enumerate(headers):
+            tk.Label(table, text=h,
+                     font=("Arial", 12, "bold"),
+                     bg="#e6e6e6",
+                     width=15,
+                     padx=5, pady=5,
+                     relief="solid").grid(row=0, column=col, sticky="nsew")
+
+        for i, s in enumerate(staff, start=1):
+            values = [s[0], s[1], s[2], s[3]]
+
+            for col, val in enumerate(values):
+                tk.Label(table, text=val,
+                         font=("Arial", 12),
+                         width=15,
+                         padx=5, pady=5,
+                         relief="solid").grid(row=i, column=col, sticky="nsew")
+
+            tk.Button(table, text="Delete",
+                      bg="#e74c3c", fg="white",
+                      command=lambda sid=s[0]: delete_staff_popup(sid, win)
+                      ).grid(row=i, column=4, padx=5, pady=5)
+
+        for col in range(len(headers)):
+            table.grid_columnconfigure(col, weight=1)
+
+    
+    tk.Button(win, text="Add Staff",
+              bg="#2ecc71", fg="white",
+              font=("Arial", 11, "bold"),
+              command=lambda: add_staff_popup(win)
+              ).pack(pady=15)
+
+def delete_staff_popup(staff_id, parent_window):
+    popup = tk.Toplevel(parent_window)
+    popup.title("Confirm Delete")
+    center_window(popup, 300, 180)
+
+    frame = tk.Frame(popup)
+    frame.pack(padx=20, pady=20, fill="both", expand=True)
+
+    tk.Label(frame,
+             text="Are you sure you want to\n delete this staff?",
+             font=("Arial", 12),
+             justify="center").pack(pady=15)
+
+    def confirm_delete():
+        if delete_staff(staff_id):
+            messagebox.showinfo("Success", "Staff deleted successfully")
             popup.destroy()
+            parent_window.destroy()   
+            view_staff_popup(root)          
+        else:
+            messagebox.showerror("Error", "Failed to delete")
 
-    tk.Button(popup, text="Delete", command=delete).pack(pady=10)
+    tk.Button(frame, text="Yes, Delete",
+              bg="#e74c3c", fg="white",
+              command=confirm_delete).pack(pady=5)
 
+    tk.Button(frame, text="Cancel",
+              command=popup.destroy).pack(pady=5)
+    
+def view_assignments_popup(parent):
+    win = tk.Toplevel(parent)
+    win.title("Staff Assignments")
+    center_window(win, 700, 400)
 
-# ✅ TEST BLOCK (LIKE BOOKING MODULE)
+    tk.Label(win, text="Staff Assignments",
+             font=("Arial", 16, "bold")).pack(pady=10)
+
+    container = tk.Frame(win)
+    container.pack(fill="both", expand=True, padx=20, pady=10)
+
+    assignments = get_assignments()
+
+    if not assignments:
+        tk.Label(container, text="No assignments found").pack()
+        return
+
+    table = tk.Frame(container)
+    table.pack(fill="x")
+
+    headers = ["Staff Name", "Role", "Room Number"]
+
+    for col, h in enumerate(headers):
+        tk.Label(table, text=h,
+                 font=("Arial", 12, "bold"),
+                 bg="#e6e6e6",
+                 width=20,
+                 padx=5, pady=5,
+                 relief="solid").grid(row=0, column=col, sticky="nsew")
+
+    for i, a in enumerate(assignments, start=1):
+        for col, val in enumerate(a):
+            tk.Label(table, text=val,
+                     font=("Arial", 12),
+                     width=20,
+                     padx=5, pady=5,
+                     relief="solid").grid(row=i, column=col, sticky="nsew")
+
+    for col in range(len(headers)):
+        table.grid_columnconfigure(col, weight=1)
+
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Staff Test")
     root.geometry("400x300")
-
-    tk.Button(root, text="Add Staff",
-              command=lambda: add_staff_popup(root)).pack(pady=10)
 
     tk.Button(root, text="View Staff",
               command=lambda: view_staff_popup(root)).pack(pady=10)
@@ -167,11 +269,5 @@ if __name__ == "__main__":
     tk.Button(root, text="Assign Staff",
               command=lambda: assign_staff_popup(root)).pack(pady=10)
 
-    tk.Button(root, text="View Assignments",
-              command=lambda: view_assignments_popup(root)).pack(pady=10)
-
-    tk.Button(root, text="Delete Staff",
-              command=lambda: delete_staff_popup(root)).pack(pady=10)
 
     root.mainloop()
-
